@@ -1,5 +1,5 @@
 //
-//  Routable.swift
+//  RoutingKit.swift
 //  CustomRoutingAndNavigationStack
 //
 //  Created by Sheraz Ahmed on 18/02/2025.
@@ -8,7 +8,8 @@
 import Foundation
 import SwiftUI
 
-public typealias Routable  = View & Hashable
+// MARK: - Routable Protocol
+public typealias Routable = View & Hashable
 
 public protocol RoutableObject: AnyObject {
     
@@ -23,10 +24,9 @@ public protocol RoutableObject: AnyObject {
     func navigateBack(to destination: Destination)
     
     func navigateToRoot()
-    
 }
 
-
+// MARK: - RoutableObject Extension
 extension RoutableObject{
     
     public func navigate(to destination: Destination) {
@@ -51,5 +51,37 @@ extension RoutableObject{
     
     public func navigateToRoot() {
         stack.removeAll()
+    }
+}
+
+// MARK: - Router Class
+public final class Router<Routes: Routable>: ObservableObject, RoutableObject {
+    public typealias Destination = Routes
+    
+    @Published public var stack: [Destination] = []
+    
+    public init() {}
+}
+
+// MARK: - RoutingView
+struct RoutingView<Root: View, Routes: Routable>: View {
+    @Binding private var routes: [Routes]
+    private let root: () -> Root
+    
+    public init(
+        stack: Binding<[Routes]>,
+        @ViewBuilder root: @escaping () -> Root
+    ){
+        self._routes = stack
+        self.root = root
+    }
+    
+    var body: some View {
+        NavigationStack(path: $routes){
+            root()
+                .navigationDestination(for: Routes.self){ view in
+                    view.body
+                }
+        }
     }
 }
